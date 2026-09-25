@@ -1,0 +1,7 @@
+.sconsign.dblite
+*.os
+build/
+addons/mujoco/bin/*
+!addons/mujoco/bin/.gitkeep
+example/addons/
+.godot/
