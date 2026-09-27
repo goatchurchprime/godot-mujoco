@@ -1,10 +1,13 @@
 [application]
 config/name="Godot MuJoCo Headless Tests"
-run/main_scene=""
+run/main_scene="res://comparison_demo.tscn"
 
 [display]
 window/size/viewport_width=640
 window/size/viewport_height=480
+
+[physics]
+3d/physics_engine="Jolt Physics"
 
 [rendering]
 renderer/rendering_method="gl_compatibility"

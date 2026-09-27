@@ -30,6 +30,11 @@ public:
 	void reset();
 	bool forward();
 	bool inverse();
+	bool step(int substeps = 1);
+	double get_time() const;
+	void clear_applied_forces();
+	bool apply_body_wrench(const StringName &name, const Vector3 &force_n,
+			const Vector3 &torque_nm);
 
 	bool set_qpos(const PackedFloat64Array &values);
 	bool set_qvel(const PackedFloat64Array &values);

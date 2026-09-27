@@ -39,18 +39,20 @@ bool MujocoModel::load_mjcf(const String &path) {
 bool MujocoModel::compile_mjcf(const String &xml) {
 	CharString utf8 = xml.utf8();
 	char error[2048] = {};
-	mjSpec *spec = mj_parseXMLString(utf8.get_data(), nullptr, error, sizeof(error));
-	if (!spec) {
+	mjVFS vfs;
+	mj_defaultVFS(&vfs);
+	const char *virtual_name = "godot-memory-model.xml";
+	if (mj_addBufferVFS(&vfs, virtual_name, utf8.get_data(), utf8.length()) != 0) {
+		mj_deleteVFS(&vfs);
+		last_error_ = "Could not create the in-memory MJCF file";
+		return false;
+	}
+	mjModel *candidate = mj_loadXML(virtual_name, &vfs, error, sizeof(error));
+	mj_deleteVFS(&vfs);
+	if (!candidate) {
 		last_error_ = String::utf8(error);
 		return false;
 	}
-	mjModel *candidate = mj_compile(spec, nullptr);
-	if (!candidate) {
-		last_error_ = String::utf8(mjs_getError(spec));
-		mj_deleteSpec(spec);
-		return false;
-	}
-	mj_deleteSpec(spec);
 	if (model_) mj_deleteModel(model_);
 	model_ = candidate;
 	last_error_ = "";

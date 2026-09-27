@@ -50,6 +50,10 @@ void MujocoData::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("reset"), &MujocoData::reset);
 	ClassDB::bind_method(D_METHOD("forward"), &MujocoData::forward);
 	ClassDB::bind_method(D_METHOD("inverse"), &MujocoData::inverse);
+	ClassDB::bind_method(D_METHOD("step", "substeps"), &MujocoData::step, DEFVAL(1));
+	ClassDB::bind_method(D_METHOD("get_time"), &MujocoData::get_time);
+	ClassDB::bind_method(D_METHOD("clear_applied_forces"), &MujocoData::clear_applied_forces);
+	ClassDB::bind_method(D_METHOD("apply_body_wrench", "name", "force_n", "torque_nm"), &MujocoData::apply_body_wrench);
 	ClassDB::bind_method(D_METHOD("set_qpos", "values"), &MujocoData::set_qpos);
 	ClassDB::bind_method(D_METHOD("set_qvel", "values"), &MujocoData::set_qvel);
 	ClassDB::bind_method(D_METHOD("set_qacc", "values"), &MujocoData::set_qacc);
@@ -78,6 +82,34 @@ bool MujocoData::initialize(const Ref<MujocoModel> &model) {
 void MujocoData::reset() { if (data_) mj_resetData(owner_->native_model(), data_); }
 bool MujocoData::forward() { if (!data_) return false; mj_forward(owner_->native_model(), data_); return true; }
 bool MujocoData::inverse() { if (!data_) return false; mj_inverse(owner_->native_model(), data_); return true; }
+bool MujocoData::step(int substeps) {
+	if (!data_ || substeps < 1 || substeps > 10000) {
+		last_error_ = "step substeps must be between 1 and 10000";
+		return false;
+	}
+	for (int i = 0; i < substeps; ++i) mj_step(owner_->native_model(), data_);
+	last_error_ = "";
+	return true;
+}
+double MujocoData::get_time() const { return data_ ? data_->time : 0.0; }
+void MujocoData::clear_applied_forces() {
+	if (data_) mju_zero(data_->xfrc_applied, 6 * owner_->native_model()->nbody);
+}
+bool MujocoData::apply_body_wrench(const StringName &name, const Vector3 &force_n,
+		const Vector3 &torque_nm) {
+	if (!force_n.is_finite() || !torque_nm.is_finite()) {
+		last_error_ = "body wrench contains a non-finite component";
+		return false;
+	}
+	int id = named_id(mjOBJ_BODY, name, "body");
+	if (id < 0) return false;
+	Vector3 force = g_to_mj(force_n); Vector3 torque = g_to_mj(torque_nm);
+	mjtNum *wrench = data_->xfrc_applied + 6 * id;
+	wrench[0] += force.x; wrench[1] += force.y; wrench[2] += force.z;
+	wrench[3] += torque.x; wrench[4] += torque.y; wrench[5] += torque.z;
+	last_error_ = "";
+	return true;
+}
 
 bool MujocoData::set_vector(mjtNum *target, int size, const PackedFloat64Array &values, const char *label) {
 	if (!data_) { last_error_ = "Simulation data is not initialized"; return false; }
