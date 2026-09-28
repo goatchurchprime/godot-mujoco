@@ -54,6 +54,9 @@ void MujocoData::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_time"), &MujocoData::get_time);
 	ClassDB::bind_method(D_METHOD("clear_applied_forces"), &MujocoData::clear_applied_forces);
 	ClassDB::bind_method(D_METHOD("apply_body_wrench", "name", "force_n", "torque_nm"), &MujocoData::apply_body_wrench);
+	ClassDB::bind_method(D_METHOD("apply_body_force_at_point", "body_id", "force_n", "point_m"), &MujocoData::apply_body_force_at_point);
+	ClassDB::bind_method(D_METHOD("raycast", "origin_m", "direction_unit", "include_static", "excluded_body_id"), &MujocoData::raycast, DEFVAL(true), DEFVAL(-1));
+	ClassDB::bind_method(D_METHOD("get_body_point_velocity", "body_id", "point_m"), &MujocoData::get_body_point_velocity);
 	ClassDB::bind_method(D_METHOD("set_qpos", "values"), &MujocoData::set_qpos);
 	ClassDB::bind_method(D_METHOD("set_qvel", "values"), &MujocoData::set_qvel);
 	ClassDB::bind_method(D_METHOD("set_qacc", "values"), &MujocoData::set_qacc);
@@ -95,7 +98,9 @@ bool MujocoData::step(int substeps) {
 }
 double MujocoData::get_time() const { return data_ ? data_->time : 0.0; }
 void MujocoData::clear_applied_forces() {
-	if (data_) mju_zero(data_->xfrc_applied, 6 * owner_->native_model()->nbody);
+	if (!data_) return;
+	mju_zero(data_->xfrc_applied, 6 * owner_->native_model()->nbody);
+	mju_zero(data_->qfrc_applied, owner_->native_model()->nv);
 }
 bool MujocoData::apply_body_wrench(const StringName &name, const Vector3 &force_n,
 		const Vector3 &torque_nm) {
@@ -111,6 +116,77 @@ bool MujocoData::apply_body_wrench(const StringName &name, const Vector3 &force_
 	wrench[3] += torque.x; wrench[4] += torque.y; wrench[5] += torque.z;
 	last_error_ = "";
 	return true;
+}
+
+bool MujocoData::apply_body_force_at_point(int body_id, const Vector3 &force_n,
+		const Vector3 &point_m) {
+	if (!data_ || body_id <= 0 || body_id >= owner_->native_model()->nbody) {
+		last_error_ = "Body id must identify a dynamic non-world body";
+		return false;
+	}
+	if (!force_n.is_finite() || !point_m.is_finite()) {
+		last_error_ = "Force or application point contains a non-finite component";
+		return false;
+	}
+	Vector3 force = g_to_mj(force_n);
+	Vector3 point = g_to_mj(point_m);
+	mjtNum force_mj[3] = {force.x, force.y, force.z};
+	mjtNum point_mj[3] = {point.x, point.y, point.z};
+	mj_applyFT(owner_->native_model(), data_, force_mj, nullptr, point_mj,
+			body_id, data_->qfrc_applied);
+	last_error_ = "";
+	return true;
+}
+
+Dictionary MujocoData::raycast(const Vector3 &origin_m,
+		const Vector3 &direction_unit, bool include_static, int excluded_body_id) {
+	Dictionary result;
+	if (!data_ || !origin_m.is_finite() || !direction_unit.is_finite() ||
+			direction_unit.length_squared() < 1e-12) {
+		last_error_ = "Ray origin and non-zero direction must be finite";
+		return result;
+	}
+	Vector3 direction_g = direction_unit.normalized();
+	Vector3 origin = g_to_mj(origin_m);
+	Vector3 direction = g_to_mj(direction_g);
+	mjtNum origin_mj[3] = {origin.x, origin.y, origin.z};
+	mjtNum direction_mj[3] = {direction.x, direction.y, direction.z};
+	mjtNum normal_mj[3] = {};
+	int geom_id = -1;
+	mjtNum distance = mj_ray(owner_->native_model(), data_, origin_mj,
+			direction_mj, nullptr, include_static, excluded_body_id, &geom_id,
+			normal_mj);
+	last_error_ = "";
+	if (distance < 0 || geom_id < 0) return result;
+	const mjModel *model = owner_->native_model();
+	const int body_id = model->geom_bodyid[geom_id];
+	const char *geom_name = mj_id2name(model, mjOBJ_GEOM, geom_id);
+	const char *body_name = mj_id2name(model, mjOBJ_BODY, body_id);
+	result["distance_m"] = distance;
+	result["position_m"] = origin_m + direction_g * distance;
+	result["normal_unit"] = mj_to_g(normal_mj).normalized();
+	result["geom_id"] = geom_id;
+	result["geom_name"] = geom_name ? String::utf8(geom_name) : String();
+	result["body_id"] = body_id;
+	result["body_name"] = body_name ? String::utf8(body_name) : String();
+	return result;
+}
+
+Vector3 MujocoData::get_body_point_velocity(int body_id,
+		const Vector3 &point_m) {
+	if (!data_ || body_id <= 0 || body_id >= owner_->native_model()->nbody ||
+			!point_m.is_finite()) {
+		last_error_ = "Body id or point is invalid";
+		return Vector3();
+	}
+	mjtNum velocity[6] = {};
+	mj_objectVelocity(owner_->native_model(), data_, mjOBJ_BODY, body_id,
+			velocity, 0);
+	Vector3 angular = mj_to_g(velocity);
+	Vector3 linear = mj_to_g(velocity + 3);
+	Vector3 body_position = mj_to_g(data_->xpos + 3 * body_id);
+	last_error_ = "";
+	return linear + angular.cross(point_m - body_position);
 }
 
 bool MujocoData::set_vector(mjtNum *target, int size, const PackedFloat64Array &values, const char *label) {

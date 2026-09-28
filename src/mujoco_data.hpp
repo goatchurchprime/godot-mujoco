@@ -35,6 +35,11 @@ public:
 	void clear_applied_forces();
 	bool apply_body_wrench(const StringName &name, const Vector3 &force_n,
 			const Vector3 &torque_nm);
+	bool apply_body_force_at_point(int body_id, const Vector3 &force_n,
+			const Vector3 &point_m);
+	Dictionary raycast(const Vector3 &origin_m, const Vector3 &direction_unit,
+			bool include_static = true, int excluded_body_id = -1);
+	Vector3 get_body_point_velocity(int body_id, const Vector3 &point_m);
 
 	bool set_qpos(const PackedFloat64Array &values);
 	bool set_qvel(const PackedFloat64Array &values);

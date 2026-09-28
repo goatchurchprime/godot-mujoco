@@ -1,0 +1,14 @@
+[remap]
+
+importer="godot_mujoco.mjcf_scene"
+type="PackedScene"
+uid="uid://dsslkyang5ixw"
+path="res://.godot/imported/imported_showcase.mjcf-586c3d0467135f2ebb0ddab0a43a652e.scn"
+
+[deps]
+
+source_file="res://models/imported_showcase.mjcf"
+dest_files=["res://.godot/imported/imported_showcase.mjcf-586c3d0467135f2ebb0ddab0a43a652e.scn"]
+
+[params]
+

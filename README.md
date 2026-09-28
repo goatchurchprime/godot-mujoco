@@ -26,6 +26,7 @@ godot4 --headless --path example --script res://tests/comparison_smoke.gd
 godot4 --headless --path example --script res://tests/demo_scene_smoke.gd
 godot4 --headless --path example --script res://tests/mjcf_loader_smoke.gd
 godot4 --headless --path example --script res://tests/mjcf_playground_smoke.gd
+godot4 --headless --path example --script res://tests/mjcf_importer_smoke.gd
 godot4 --path example
 ```
 
@@ -45,11 +46,19 @@ and keeps them synchronized while MuJoCo steps. Run it with:
 godot4 --path example res://mjcf_playground.tscn
 ```
 
-Use **Space** to pause, **.** to advance one exact MuJoCo step group, **R** to
-reset, **K** to perturb the free body, and **[**/**]** to change playback speed.
-This is runtime source-authoritative import, not yet an editor importer that
-saves generated `.tscn` files, and generated nodes are not editable MuJoCo
-model components.
+Use the right mouse button to orbit, middle mouse button to pan, the wheel to
+zoom, and the left mouse button to grab a dynamic MuJoCo body with a damped
+spring force. **Space** pauses, **.** advances one exact MuJoCo step group,
+**R** resets, **K** perturbs the free body, and **[**/**]** changes speed.
+
+With the editor plug-in enabled, files named `.mjcf` import as reimportable,
+source-authoritative `PackedScene` resources. Instantiating one loads its source
+through MuJoCo and runs it. The importer deliberately does not claim every
+`.xml` file; XML-named MJCF remains supported through `MujocoScene3D.mjcf_path`.
+Imported scenes are read-only in the same sense as other imported scenes and
+can be used as the base of an inherited scene. This does not yet bake generated
+visual children into the editor preview, and generated nodes are not editable
+MuJoCo model components.
 
 Linux/headless is the first supported target. The descriptor and build layout
 reserve Windows and macOS artifacts, but neither is claimed tested. Mobile is
