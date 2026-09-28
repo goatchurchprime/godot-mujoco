@@ -1,10 +1,11 @@
+@tool
 class_name MujocoScene3D
 extends Node3D
 
 ## Runtime MJCF loader and visualizer. The source MJCF remains authoritative;
 ## this node does not yet serialize edits to its generated children back to XML.
 
-@export_file("*.xml") var mjcf_path := ""
+@export_file("*.xml,*.mjcf,*.mjz") var mjcf_path := ""
 @export var auto_load := true
 @export var simulate := true
 @export_range(1, 100, 1) var substeps := 1
@@ -25,11 +26,15 @@ var _materials: Array = []
 
 
 func _ready() -> void:
+    if Engine.is_editor_hint():
+        return
     if auto_load and not mjcf_path.is_empty():
         load_mjcf(mjcf_path)
 
 
 func _physics_process(delta: float) -> void:
+    if Engine.is_editor_hint():
+        return
     if not simulate or simulation == null:
         return
     _accumulator += delta * time_scale
@@ -146,8 +151,18 @@ func clear_model() -> void:
     _textures.clear()
     _materials.clear()
     if _generated_root != null:
-        _generated_root.queue_free()
+        # Imported scenes contain a packed editor preview with this name. It
+        # must be removed synchronously before rebuilding the live hierarchy,
+        # otherwise one frame contains duplicate bodies and node names.
+        if _generated_root.get_parent() == self:
+            remove_child(_generated_root)
+        _generated_root.free()
         _generated_root = null
+    else:
+        var imported_preview := get_node_or_null("GeneratedMJCF")
+        if imported_preview != null:
+            remove_child(imported_preview)
+            imported_preview.free()
 
 
 func _build_bodies(bodies: Array) -> void:
@@ -222,7 +237,9 @@ func _make_mesh(geom: Dictionary) -> Mesh:
             return mesh
         "mesh":
             if geom.data_id >= 0 and geom.data_id < _meshes.size():
-                return _make_array_mesh(_meshes[geom.data_id])
+                var source: Dictionary = _meshes[geom.data_id]
+                if not source.vertices.is_empty():
+                    return _make_array_mesh(source)
             return _make_placeholder_mesh()
         _:
             # Hfield and SDF rendering need additional compiled asset buffers.

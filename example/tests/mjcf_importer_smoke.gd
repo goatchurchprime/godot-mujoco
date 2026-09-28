@@ -11,6 +11,12 @@ func _run() -> void:
         push_error(".mjcf was not imported as a PackedScene")
         quit(1)
         return
+    # The packed import itself contains an editor-visible generated hierarchy.
+    var preview := packed.instantiate() as MujocoScene3D
+    assert(preview.get_node_or_null("GeneratedMJCF") != null)
+    assert(preview.get_node("GeneratedMJCF").get_child_count() > 0)
+    preview.free()
+
     var scene := packed.instantiate() as MujocoScene3D
     assert(scene != null)
     root.add_child(scene)
@@ -18,5 +24,6 @@ func _run() -> void:
     assert(scene.simulation != null, scene.last_error)
     assert(scene.body_nodes.size() == 2)
     assert(scene.geom_nodes.size() == 2)
+    assert(scene.get_node("GeneratedMJCF").get_child_count() > 0)
     print("godot-mujoco MJCF editor importer smoke: PASS")
     quit(0)

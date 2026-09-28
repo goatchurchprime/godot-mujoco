@@ -51,14 +51,28 @@ zoom, and the left mouse button to grab a dynamic MuJoCo body with a damped
 spring force. **Space** pauses, **.** advances one exact MuJoCo step group,
 **R** resets, **K** perturbs the free body, and **[**/**]** changes speed.
 
-With the editor plug-in enabled, files named `.mjcf` import as reimportable,
-source-authoritative `PackedScene` resources. Instantiating one loads its source
-through MuJoCo and runs it. The importer deliberately does not claim every
+With the editor plug-in enabled, files named `.mjcf` or `.mjz` import as
+reimportable, source-authoritative `PackedScene` resources. Instantiating one loads its source
+through MuJoCo and runs it. The imported scene contains a generated body/geom
+preview hierarchy, so it can be opened and inspected before running. The
+preview is regenerated on reimport and is not the editable physics source.
+The importer deliberately does not claim every
 `.xml` file; XML-named MJCF remains supported through `MujocoScene3D.mjcf_path`.
 Imported scenes are read-only in the same sense as other imported scenes and
-can be used as the base of an inherited scene. This does not yet bake generated
-visual children into the editor preview, and generated nodes are not editable
+can be used as the base of an inherited scene. Generated nodes are not editable
 MuJoCo model components.
+
+MJCF is usually a package, not one standalone XML file. Preserve referenced
+`<include>` files and the asset directories named by `<compiler meshdir>` and
+`texturedir`. The importer rejects named meshes which compile with zero vertex
+data and reports their names; copying only a Menagerie XML file is insufficient.
+
+MuJoCo's `.mjz` archive is the direct analogue of a GLB for this purpose: it is
+a Zip archive containing the root XML, includes and external assets. It remains
+high-level and editable after decoding. Prefer MJZ when distributing a complete
+model as one file. A compiled `.mjb` is also self-contained and faster to load,
+but it is MuJoCo-version-specific and cannot be recovered as editable MJCF, so
+it is not the preferred interchange/archive format.
 
 Linux/headless is the first supported target. The descriptor and build layout
 reserve Windows and macOS artifacts, but neither is claimed tested. Mobile is

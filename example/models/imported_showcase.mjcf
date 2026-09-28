@@ -1,4 +1,5 @@
 <mujoco model="imported-showcase">
+  <!-- Complete self-contained fixture for editor import and preview tests. -->
   <option timestep="0.008333333333" gravity="0 0 -9.81"/>
   <worldbody>
     <geom name="floor" type="plane" size="3 3 0.1" rgba="0.25 0.28 0.32 1"/>
