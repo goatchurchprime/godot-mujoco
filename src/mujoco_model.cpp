@@ -49,6 +49,16 @@ const char *geom_type_name(int type) {
 		default: return "unknown";
 	}
 }
+
+const char *joint_type_name(int type) {
+	switch (type) {
+		case mjJNT_FREE: return "free";
+		case mjJNT_BALL: return "ball";
+		case mjJNT_SLIDE: return "slide";
+		case mjJNT_HINGE: return "hinge";
+		default: return "unknown";
+	}
+}
 } // namespace
 
 MujocoModel::~MujocoModel() {
@@ -64,6 +74,7 @@ void MujocoModel::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_sizes"), &MujocoModel::get_sizes);
 	ClassDB::bind_method(D_METHOD("get_names", "object_type"), &MujocoModel::get_names);
 	ClassDB::bind_method(D_METHOD("get_bodies"), &MujocoModel::get_bodies);
+	ClassDB::bind_method(D_METHOD("get_joints"), &MujocoModel::get_joints);
 	ClassDB::bind_method(D_METHOD("get_geoms"), &MujocoModel::get_geoms);
 	ClassDB::bind_method(D_METHOD("get_meshes"), &MujocoModel::get_meshes);
 	ClassDB::bind_method(D_METHOD("get_textures"), &MujocoModel::get_textures);
@@ -169,6 +180,28 @@ Array MujocoModel::get_bodies() const {
 	return result;
 }
 
+Array MujocoModel::get_joints() const {
+	Array result;
+	if (!model_) return result;
+	for (int id = 0; id < model_->njnt; ++id) {
+		Dictionary item;
+		const char *name = mj_id2name(model_, mjOBJ_JOINT, id);
+		item["id"] = id;
+		item["name"] = name ? String::utf8(name) : String();
+		item["body_id"] = model_->jnt_bodyid[id];
+		item["type"] = joint_type_name(model_->jnt_type[id]);
+		item["type_id"] = model_->jnt_type[id];
+		item["position_m"] = mj_to_g(model_->jnt_pos + 3 * id);
+		item["axis_unit"] = mj_to_g(model_->jnt_axis + 3 * id);
+		item["limited"] = model_->jnt_limited[id] != 0;
+		item["range_rad_or_m"] = Vector2(model_->jnt_range[2 * id],
+				model_->jnt_range[2 * id + 1]);
+		item["damping"] = model_->dof_damping[model_->jnt_dofadr[id]];
+		result.push_back(item);
+	}
+	return result;
+}
+
 Array MujocoModel::get_geoms() const {
 	Array result;
 	if (!model_) return result;
@@ -213,6 +246,7 @@ Array MujocoModel::get_meshes() const {
 		PackedVector3Array normals;
 		PackedVector2Array texcoords;
 		const int face_address = model_->mesh_faceadr[id];
+		const int vertex_address = model_->mesh_vertadr[id];
 		const int normal_address = model_->mesh_normaladr[id];
 		const int texcoord_address = model_->mesh_texcoordadr[id];
 		const int corner_count = 3 * model_->mesh_facenum[id];
@@ -221,7 +255,7 @@ Array MujocoModel::get_meshes() const {
 		if (texcoord_address >= 0) texcoords.resize(corner_count);
 		for (int corner = 0; corner < corner_count; ++corner) {
 			const int face_slot = 3 * face_address + corner;
-			const int vertex_id = model_->mesh_face[face_slot];
+			const int vertex_id = vertex_address + model_->mesh_face[face_slot];
 			const float *vertex = model_->mesh_vert + 3 * vertex_id;
 			mjtNum scaled[3] = {
 				vertex[0] * model_->mesh_scale[3 * id],
@@ -233,7 +267,7 @@ Array MujocoModel::get_meshes() const {
 			mju_addTo3(transformed, model_->mesh_pos + 3 * id);
 			vertices.set(corner, mj_to_g(transformed));
 			if (normal_address >= 0) {
-				const int normal_id = model_->mesh_facenormal[face_slot];
+				const int normal_id = normal_address + model_->mesh_facenormal[face_slot];
 				const float *normal = model_->mesh_normal + 3 * normal_id;
 				mjtNum rotated[3];
 				mjtNum source[3] = {normal[0], normal[1], normal[2]};
@@ -241,7 +275,7 @@ Array MujocoModel::get_meshes() const {
 				normals.set(corner, mj_to_g(rotated).normalized());
 			}
 			if (texcoord_address >= 0) {
-				const int texcoord_id = model_->mesh_facetexcoord[face_slot];
+				const int texcoord_id = texcoord_address + model_->mesh_facetexcoord[face_slot];
 				const float *uv = model_->mesh_texcoord + 2 * texcoord_id;
 				texcoords.set(corner, Vector2(uv[0], 1.0f - uv[1]));
 			}

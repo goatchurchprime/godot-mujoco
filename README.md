@@ -62,6 +62,12 @@ Imported scenes are read-only in the same sense as other imported scenes and
 can be used as the base of an inherited scene. Generated nodes are not editable
 MuJoCo model components.
 
+Imported dynamic bodies are represented by `MujocoBody3D` and their joint
+frames by `MujocoJoint3D`. They intentionally do not inherit Godot's
+`RigidBody3D` or `Joint3D`: MuJoCo owns and solves this articulated state, and
+adding Jolt bodies would simulate the same mechanism twice. Joint nodes expose
+their MuJoCo type, local axis, limit range and damping for inspection.
+
 MJCF is usually a package, not one standalone XML file. Preserve referenced
 `<include>` files and the asset directories named by `<compiler meshdir>` and
 `texturedir`. The importer rejects named meshes which compile with zero vertex

@@ -29,6 +29,7 @@ public:
 	Dictionary get_sizes() const;
 	PackedStringArray get_names(const StringName &object_type) const;
 	Array get_bodies() const;
+	Array get_joints() const;
 	Array get_geoms() const;
 	Array get_meshes() const;
 	Array get_textures() const;

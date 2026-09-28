@@ -2,10 +2,13 @@
 class_name MujocoScene3D
 extends Node3D
 
+const MujocoBodyNode = preload("res://addons/mujoco/mujoco_body_3d.gd")
+const MujocoJointNode = preload("res://addons/mujoco/mujoco_joint_3d.gd")
+
 ## Runtime MJCF loader and visualizer. The source MJCF remains authoritative;
 ## this node does not yet serialize edits to its generated children back to XML.
 
-@export_file("*.xml,*.mjcf,*.mjz") var mjcf_path := ""
+@export_file("*.xml", "*.mjcf", "*.mjz") var mjcf_path := ""
 @export var auto_load := true
 @export var simulate := true
 @export_range(1, 100, 1) var substeps := 1
@@ -14,6 +17,7 @@ extends Node3D
 var model: MujocoModel
 var simulation: MujocoData
 var body_nodes: Dictionary = {}
+var joint_nodes: Dictionary = {}
 var geom_nodes: Dictionary = {}
 var last_error := ""
 
@@ -72,6 +76,7 @@ func load_mjcf(path: String) -> bool:
     _textures = model.get_textures()
     _materials = model.get_materials()
     _build_bodies(model.get_bodies())
+    _build_joints(model.get_joints())
     _build_geoms(model.get_geoms())
     _step_seconds = model.get_timestep() * substeps
     _accumulator = 0.0
@@ -146,6 +151,7 @@ func clear_model() -> void:
     model = null
     simulation = null
     body_nodes.clear()
+    joint_nodes.clear()
     geom_nodes.clear()
     _meshes.clear()
     _textures.clear()
@@ -167,8 +173,12 @@ func clear_model() -> void:
 
 func _build_bodies(bodies: Array) -> void:
     for body in bodies:
-        var node := Node3D.new()
+        var node := MujocoBodyNode.new()
         node.name = _safe_name(body.name, "body", body.id)
+        node.mujoco_id = body.id
+        node.source_name = body.name
+        node.mass_kg = body.mass_kg
+        node.dynamic = body.id > 0
         node.set_meta("mujoco_body_id", body.id)
         node.set_meta("mujoco_name", body.name)
         body_nodes[body.id] = node
@@ -180,6 +190,23 @@ func _build_bodies(bodies: Array) -> void:
         else:
             _generated_root.add_child(node)
         node.transform = body.local_transform
+
+
+func _build_joints(joints: Array) -> void:
+    for joint in joints:
+        var node := MujocoJointNode.new()
+        node.name = _safe_name(joint.name, "joint", joint.id)
+        node.position = joint.position_m
+        node.mujoco_id = joint.id
+        node.source_name = joint.name
+        node.joint_type = joint.type
+        node.axis_unit = joint.axis_unit
+        node.limited = joint.limited
+        node.range_rad_or_m = joint.range_rad_or_m
+        node.damping = joint.damping
+        node.set_meta("mujoco_joint_id", joint.id)
+        body_nodes[joint.body_id].add_child(node)
+        joint_nodes[joint.id] = node
 
 
 func _build_geoms(geoms: Array) -> void:
