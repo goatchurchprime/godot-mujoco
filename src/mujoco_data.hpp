@@ -44,7 +44,9 @@ public:
 	PackedFloat64Array get_qacc() const;
 
 	Transform3D get_body_transform(const StringName &name);
+	Transform3D get_body_transform_by_id(int id);
 	Transform3D get_site_transform(const StringName &name);
+	Transform3D get_geom_transform_by_id(int id);
 	Dictionary get_joint_frame(const StringName &name);
 	Vector3 get_body_com(const StringName &name);
 	Vector3 get_subtree_com(const StringName &name);

@@ -189,14 +189,21 @@ or baking an offline result.
 
 Godot plus MuJoCo remains authoritative for runtime physical animation: live XR
 targets, networked players and unplanned contacts cannot be baked in advance.
-The desired pipeline is bidirectional rather than exclusive:
+The desired pipeline distinguishes offline authoring from runtime capture:
 
 ```text
 Blender-authored character and animation targets
                     -> Godot + MuJoCo active simulation
-                    -> recorded Godot animation
+                    -> lightweight runtime take capture when needed
                     -> optional Blender cleanup and final bake
 ```
+
+Deliberate offline animation authoring and physics baking belong primarily in
+Blender (using native rigid bodies, Ragdoll Dynamics, or a future MuJoCo
+add-on). Godot should not reproduce Blender's graph editor, NLA workflow,
+rigging tools or detailed keyframe editing. A Godot recorder remains useful for
+emergent XR, networked and gameplay interactions which cannot be authored in
+advance; it should record and export a take rather than become a general DCC.
 
 Ragdoll Dynamics is a useful workflow reference for pose-following physics,
 pinning, per-joint compliance, live manipulation and baking. Its public Blender

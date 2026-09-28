@@ -1,0 +1,31 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource path="res://mjcf_playground.gd" type="Script" id="1_playground"]
+[ext_resource path="res://addons/mujoco/mujoco_scene_3d.gd" type="Script" id="2_mujoco"]
+
+[node name="MJCFPlayground" type="Node3D"]
+script = ExtResource("1_playground")
+
+[node name="MujocoScene3D" type="Node3D" parent="."]
+script = ExtResource("2_mujoco")
+mjcf_path = "res://models/primitive_showcase.xml"
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(0.866025, -0.17101, 0.469846, 0, 0.939693, 0.34202, -0.5, -0.296198, 0.813798, 2.7, 1.9, 4.2)
+current = true
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-52, -28, 0)
+shadow_enabled = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+
+[node name="Interface" type="CanvasLayer" parent="."]
+
+[node name="Status" type="Label" parent="Interface"]
+offset_left = 18.0
+offset_top = 18.0
+offset_right = 620.0
+offset_bottom = 112.0
+theme_override_font_sizes/font_size = 18
+text = "Loading MJCF…"

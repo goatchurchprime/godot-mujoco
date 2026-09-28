@@ -61,7 +61,9 @@ void MujocoData::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_qvel"), &MujocoData::get_qvel);
 	ClassDB::bind_method(D_METHOD("get_qacc"), &MujocoData::get_qacc);
 	ClassDB::bind_method(D_METHOD("get_body_transform", "name"), &MujocoData::get_body_transform);
+	ClassDB::bind_method(D_METHOD("get_body_transform_by_id", "id"), &MujocoData::get_body_transform_by_id);
 	ClassDB::bind_method(D_METHOD("get_site_transform", "name"), &MujocoData::get_site_transform);
+	ClassDB::bind_method(D_METHOD("get_geom_transform_by_id", "id"), &MujocoData::get_geom_transform_by_id);
 	ClassDB::bind_method(D_METHOD("get_joint_frame", "name"), &MujocoData::get_joint_frame);
 	ClassDB::bind_method(D_METHOD("get_body_com", "name"), &MujocoData::get_body_com);
 	ClassDB::bind_method(D_METHOD("get_subtree_com", "name"), &MujocoData::get_subtree_com);
@@ -146,11 +148,27 @@ int MujocoData::named_id(mjtObj type, const StringName &name, const char *label)
 
 Transform3D MujocoData::get_body_transform(const StringName &name) {
 	int id = named_id(mjOBJ_BODY, name, "body"); if (id < 0) return Transform3D();
+	return get_body_transform_by_id(id);
+}
+Transform3D MujocoData::get_body_transform_by_id(int id) {
+	if (!data_ || id < 0 || id >= owner_->native_model()->nbody) {
+		last_error_ = "Body id is out of range";
+		return Transform3D();
+	}
+	last_error_ = "";
 	return pose_to_g(data_->xpos + 3 * id, data_->xmat + 9 * id);
 }
 Transform3D MujocoData::get_site_transform(const StringName &name) {
 	int id = named_id(mjOBJ_SITE, name, "site"); if (id < 0) return Transform3D();
 	return pose_to_g(data_->site_xpos + 3 * id, data_->site_xmat + 9 * id);
+}
+Transform3D MujocoData::get_geom_transform_by_id(int id) {
+	if (!data_ || id < 0 || id >= owner_->native_model()->ngeom) {
+		last_error_ = "Geom id is out of range";
+		return Transform3D();
+	}
+	last_error_ = "";
+	return pose_to_g(data_->geom_xpos + 3 * id, data_->geom_xmat + 9 * id);
 }
 Dictionary MujocoData::get_joint_frame(const StringName &name) {
 	Dictionary result; int id = named_id(mjOBJ_JOINT, name, "joint"); if (id < 0) return result;

@@ -24,6 +24,8 @@ cp -a addons/mujoco example/addons/
 godot4 --headless --path example --script res://tests/api_smoke.gd
 godot4 --headless --path example --script res://tests/comparison_smoke.gd
 godot4 --headless --path example --script res://tests/demo_scene_smoke.gd
+godot4 --headless --path example --script res://tests/mjcf_loader_smoke.gd
+godot4 --headless --path example --script res://tests/mjcf_playground_smoke.gd
 godot4 --path example
 ```
 
@@ -33,6 +35,21 @@ the same impulse-equivalent kick, and **R** to reset. It is a qualitative
 integration instrument, not a performance benchmark: both backends use the
 same authored dimensions, masses, joint limits, initial pose and fixed MuJoCo
 step, while their constraint/contact solvers remain intentionally native.
+
+The example also includes `mjcf_playground.tscn`, a first `simulate`-style
+source-authoritative MJCF viewer. It loads the XML through MuJoCo, constructs
+Godot visuals from the compiled bodies, geoms, meshes, materials and textures,
+and keeps them synchronized while MuJoCo steps. Run it with:
+
+```sh
+godot4 --path example res://mjcf_playground.tscn
+```
+
+Use **Space** to pause, **.** to advance one exact MuJoCo step group, **R** to
+reset, **K** to perturb the free body, and **[**/**]** to change playback speed.
+This is runtime source-authoritative import, not yet an editor importer that
+saves generated `.tscn` files, and generated nodes are not editable MuJoCo
+model components.
 
 Linux/headless is the first supported target. The descriptor and build layout
 reserve Windows and macOS artifacts, but neither is claimed tested. Mobile is
