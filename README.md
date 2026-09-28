@@ -38,6 +38,11 @@ Linux/headless is the first supported target. The descriptor and build layout
 reserve Windows and macOS artifacts, but neither is claimed tested. Mobile is
 out of scope. See [docs/conventions.md](docs/conventions.md).
 
+The recovered product scope and architectural rationale are recorded in
+[docs/design-decisions.md](docs/design-decisions.md). This includes the MJCF vs
+`mjSpec` authority model, active-ragdoll direction, `simulate` parity strategy,
+Blender/Godot workflow boundary and test requirements.
+
 The pinned Linux development environment currently resolves Godot 4.6.3 and
 MuJoCo 3.14.0. Godot is built with a dynamic C++ runtime so the host and MuJoCo
 share one `libstdc++`; this avoids C++ symbol interposition in MuJoCo's MJCF
