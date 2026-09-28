@@ -13,6 +13,8 @@ const MujocoJointNode = preload("res://addons/mujoco/mujoco_joint_3d.gd")
 @export var simulate := true
 @export_range(1, 100, 1) var substeps := 1
 @export_range(0.01, 8.0, 0.01) var time_scale := 1.0
+@export_flags("Group 0", "Group 1", "Group 2", "Group 3", "Group 4", "Group 5") \
+var visible_geom_groups := 0b000111
 
 var model: MujocoModel
 var simulation: MujocoData
@@ -216,6 +218,8 @@ func _build_geoms(geoms: Array) -> void:
         instance.set_meta("mujoco_geom_id", geom.id)
         instance.set_meta("mujoco_name", geom.name)
         instance.set_meta("mujoco_type", geom.type)
+        instance.set_meta("mujoco_group", geom.group)
+        instance.visible = (visible_geom_groups & (1 << geom.group)) != 0
         instance.mesh = _make_mesh(geom)
         instance.transform = geom.local_transform
         if geom.type == "ellipsoid":

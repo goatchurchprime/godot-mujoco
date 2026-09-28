@@ -67,6 +67,10 @@ frames by `MujocoJoint3D`. They intentionally do not inherit Godot's
 `RigidBody3D` or `Joint3D`: MuJoCo owns and solves this articulated state, and
 adding Jolt bodies would simulate the same mechanism twice. Joint nodes expose
 their MuJoCo type, local axis, limit range and damping for inspection.
+MuJoCo geom groups 0–2 are visible by default; models such as the Berkeley
+Humanoid put detailed visuals in group 2 and simplified collision shapes in
+group 3. Enable group 3 on `MujocoScene3D.visible_geom_groups` when collision
+geometry inspection is wanted.
 
 MJCF is usually a package, not one standalone XML file. Preserve referenced
 `<include>` files and the asset directories named by `<compiler meshdir>` and

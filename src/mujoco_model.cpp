@@ -218,6 +218,7 @@ Array MujocoModel::get_geoms() const {
 		item["type_id"] = model_->geom_type[id];
 		item["data_id"] = model_->geom_dataid[id];
 		item["material_id"] = model_->geom_matid[id];
+		item["group"] = model_->geom_group[id];
 		item["size_mj"] = Vector3(model_->geom_size[3 * id],
 				model_->geom_size[3 * id + 1], model_->geom_size[3 * id + 2]);
 		item["size_godot_axes_m"] = Vector3(model_->geom_size[3 * id],
